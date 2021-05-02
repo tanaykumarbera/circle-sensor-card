@@ -13,6 +13,13 @@ class CircleSensorCard extends LitElement {
   }
 
   _render({ state, dashArray, config }) {
+
+    if (state == undefined) return html`<span></span>`;
+
+    this.displayLabel = state && (
+      config.attribute ? state.attributes[config.attribute] : state.state
+    ) || 'unavailable';
+
     return html`
       <style>
           :host {
@@ -21,6 +28,8 @@ class CircleSensorCard extends LitElement {
 
           .container {
             position: relative;
+            max-width: 300px;
+            margin: 0px auto;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -47,16 +56,20 @@ class CircleSensorCard extends LitElement {
             font-weight: bold;
           }
           
-          #label, #name {
-            margin: 1% 0;
+          #name {
+            margin: 16px auto;
           }
 
-          .text, #name {
-            font-size: 100%;
+          .cs-name {
+            font-size: 1.4em;
+          }
+
+          .cs-label {
+            font-size: 3.2em;
           }
           
           .unit {
-            font-size: 75%;
+            font-size: 50%;
           }
 
       </style>
@@ -70,10 +83,14 @@ class CircleSensorCard extends LitElement {
             transform="rotate(-90 100 100)"/>
         </svg>
         <span class="labelContainer">
+          <ha-icon icon="${state.attributes['icon'] || '' }"></ha-icon>
+          <span id="name" class="cs-name">
+            ${state.attributes['friendly_name'] || '' }
+          </span>
           ${config.name != null ? html`<span id="name">${config.name}</span>` : ''}
-          <span id="label" class$="${!!config.name ? 'bold' : ''}">
+          <span id="label" class="cs-label">
             <span class="text">
-              ${config.attribute ? state.attributes[config.attribute] : state.state}
+              ${this.displayLabel == 'unavailable' ? 'N A' : this.displayLabel}
             </span>
             <span class="unit">
               ${config.show_max
@@ -119,8 +136,8 @@ class CircleSensorCard extends LitElement {
 
   _updateConfig() {
     const container = this._root.querySelector('.labelContainer');
+    if (container == undefined) return;
     container.style.color = 'var(--primary-text-color)';
-
     if (this.config.font_style) {
       Object.keys(this.config.font_style).forEach((prop) => {
         container.style.setProperty(prop, this.config.font_style[prop]);
@@ -129,7 +146,7 @@ class CircleSensorCard extends LitElement {
   }
 
   set hass(hass) {
-    this.state = hass.states[this.config.entity];
+    this.state = hass && hass.states[this.config.entity] || undefined;
 
     if (this.config.attribute) {
       if (!this.state.attributes[this.config.attribute] ||
@@ -247,3 +264,4 @@ class CircleSensorCard extends LitElement {
   }
 }
 customElements.define('circle-sensor-card', CircleSensorCard);
+
